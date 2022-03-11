@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5ca5b3cd-a0e9-40a7-ad4e-c2810329a9b7" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/templates/imageProcessing/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/coco.names" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/frozen_inference_graph.pb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cv_backend/imageProcessing/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +23,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="ProjectId" id="25lFlUrOe2XMEhF6tSMo6vN5MtT" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -31,10 +41,15 @@
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/cv_backend/imageProcessing" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing" />
       <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing\templates\imageProcessing" />
     </key>
   </component>
@@ -59,6 +74,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

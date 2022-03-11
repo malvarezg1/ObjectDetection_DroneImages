@@ -5,8 +5,8 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
 from base64 import b64encode
-
-
+import cv2
+import numpy as np
 
 # Create your views here.
 config = {
@@ -34,8 +34,22 @@ class FirebaseConnection:
         firebase_admin.initialize_app(self.cred, config)
         self.bucket = storage.bucket()
 
+class YoloModel:
+    def __init__(self):
+        with open('D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/coco.names', 'r') as f:
+            classNames = f.read().split('\n')
+        configPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt'
+        weightsPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/frozen_inference_graph.pb'
+        net = cv2.dnn_DetectionModel(weightsPath, configPath)
+        net.setInputSize((320, 320))
+        net.setInputScale(1.0 / 127.5)
+        net.setInputMean((127.5, 127.5, 127.5))
+        net.setInputSwapRB(True)
+        self.net = net
+        self.classes = classNames
 
 firebase = FirebaseConnection()
+yolo_model = YoloModel()
 
 def index(request):
         blobs = firebase.bucket.list_blobs()
@@ -47,9 +61,35 @@ def index(request):
 
 
 def get_image_by_id(request, image_id):
-    blob= firebase.bucket.blob('images/DJI_0001.JPG')
-    bytes = blob.download_as_bytes()
-    image = b64encode(bytes).decode('utf-8')
+    blob = firebase.bucket.blob('images/DJI_0009.jpg')
+    blob_bytes = blob.download_as_bytes()
+    im_arr = np.frombuffer(blob_bytes, dtype=np.uint8)  # im_arr is one-dim Numpy array
+    img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+    results = count_persons_image(img)
+    print(results)
+    for x, y, h, w, label in results:
+        img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
+        img =cv2.putText(img,label , (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
+    ret, jpg = cv2.imencode('.jpg', img)
+    image = b64encode(jpg).decode('utf-8')
     template = loader.get_template('imageProcessing/image.html')
-    context = {'image':image}
+    context = {'image': image}
     return HttpResponse(template.render(context, request))
+
+def count_persons_image(img):
+    thres = 0.5
+    nmsThres = 0.5
+    classIds, confs, bbox = yolo_model.net.detect(img, confThreshold=thres, nmsThreshold=nmsThres)
+    bbox = list(bbox)
+    confs = list(np.array(confs).reshape(1, -1)[0])
+    confs = list(map(float, confs))
+    indices = cv2.dnn.NMSBoxes(bbox, confs, thres, nmsThres)
+    results = list()
+    if len(classIds) != 0:
+        for i in indices:
+            print(classIds)
+            box = bbox[i]
+            confidence = str(round(confs[i], 2))
+            x, y, w, h = box[0], box[1], box[2], box[3]
+            results.append([x, y, h, w, yolo_model.classes[classIds[i]-1] + ' ' + confidence])
+    return results
