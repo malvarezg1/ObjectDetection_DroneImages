@@ -4,6 +4,7 @@ from django.template import loader
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
+from firebase_admin import firestore
 from base64 import b64encode
 import cv2
 import numpy as np
@@ -33,6 +34,7 @@ class FirebaseConnection:
         self.cred = credentials.Certificate(firebase_key)
         firebase_admin.initialize_app(self.cred, config)
         self.bucket = storage.bucket()
+        self.db = firestore.client()
 
 class YoloModel:
     def __init__(self):
@@ -52,29 +54,50 @@ firebase = FirebaseConnection()
 yolo_model = YoloModel()
 
 def index(request):
-        blobs = firebase.bucket.list_blobs()
+        blobs = firebase.bucket.list_blobs()    
         template = loader.get_template('imageProcessing/index.html')
         context = {
             'files_list': blobs
         }
         return HttpResponse(template.render(context, request))
 
-
-def get_image_by_id(request, image_id):
-    blob = firebase.bucket.blob('images/DJI_0009.jpg')
-    blob_bytes = blob.download_as_bytes()
-    im_arr = np.frombuffer(blob_bytes, dtype=np.uint8)  # im_arr is one-dim Numpy array
-    img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
-    results = count_persons_image(img)
-    print(results)
-    for x, y, h, w, label in results:
-        img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
-        img =cv2.putText(img,label , (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
-    ret, jpg = cv2.imencode('.jpg', img)
-    image = b64encode(jpg).decode('utf-8')
-    template = loader.get_template('imageProcessing/image.html')
-    context = {'image': image}
-    return HttpResponse(template.render(context, request))
+def get_image_by_id(request, image_route):
+    doc_ref = firebase.db.collection(u'Analyzed_Media').document(u''+image_route)
+    doc = doc_ref.get()
+    if doc.exists:
+        template = loader.get_template('imageProcessing/index.html')
+        context = {'files_list': "La imagen ya existe"}
+        return HttpResponse(template.render(context, request))
+    else:
+        blob = firebase.bucket.blob('images/' + image_route)
+        blob_bytes = blob.download_as_bytes()
+        im_arr = np.frombuffer(blob_bytes, dtype=np.uint8)  # im_arr is one-dim Numpy array
+        img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+        results = count_persons_image(img)
+        pers = list()
+        for x, y, h, w, label, confidence in results:
+            img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
+            img = cv2.putText(img,label , (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
+            pers.append({
+                u"x": float(x),
+                u"y": float(y),
+                u"h": float(h),
+                u"w": float(w),
+                u"label": label,
+                u"confidence": float(confidence)
+            })
+        data = {
+            "persons": {
+                u"count": len(pers),
+                u"shapes": pers
+            }
+        }
+        firebase.db.collection(u"Analyzed_Media").document(u""+image_route).set(data)
+        ret, jpg = cv2.imencode('.jpg', img)
+        image = b64encode(jpg).decode('utf-8')
+        template = loader.get_template('imageProcessing/image.html')
+        context = {'image': image}
+        return HttpResponse(template.render(context, request))
 
 def count_persons_image(img):
     thres = 0.5
@@ -91,5 +114,7 @@ def count_persons_image(img):
             box = bbox[i]
             confidence = str(round(confs[i], 2))
             x, y, w, h = box[0], box[1], box[2], box[3]
-            results.append([x, y, h, w, yolo_model.classes[classIds[i]-1] + ' ' + confidence])
+            if yolo_model.classes[classIds[i]-1] == 'person':
+                results.append([x, y, h, w, yolo_model.classes[classIds[i]-1], confidence])
     return results
+

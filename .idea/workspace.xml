@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5ca5b3cd-a0e9-40a7-ad4e-c2810329a9b7" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/coco.names" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/frozen_inference_graph.pb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cv_backend/imageProcessing/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cv_backend/imageProcessing/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/cv_backend/imageProcessing/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -62,6 +60,14 @@
       <option name="presentableId" value="Default" />
       <updated>1646093917078</updated>
     </task>
+    <task id="LOCAL-00001" summary="Image Analysis">
+      <created>1647010137703</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1647010137703</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -75,6 +81,10 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Image Analysis" />
+    <option name="LAST_COMMIT_MESSAGE" value="Image Analysis" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
