@@ -8,6 +8,7 @@ from firebase_admin import firestore
 from base64 import b64encode
 import cv2
 import numpy as np
+import io
 
 # Create your views here.
 config = {
@@ -65,10 +66,12 @@ def get_image_by_id(request, image_route):
     doc_ref = firebase.db.collection(u'Analyzed_Media').document(u''+image_route)
     doc = doc_ref.get()
     if doc.exists:
+        print("Existe")
         template = loader.get_template('imageProcessing/index.html')
         context = {'files_list': "La imagen ya existe"}
         return HttpResponse(template.render(context, request))
     else:
+        print("No existe")
         blob = firebase.bucket.blob('images/' + image_route)
         blob_bytes = blob.download_as_bytes()
         im_arr = np.frombuffer(blob_bytes, dtype=np.uint8)  # im_arr is one-dim Numpy array
@@ -93,8 +96,11 @@ def get_image_by_id(request, image_route):
             }
         }
         firebase.db.collection(u"Analyzed_Media").document(u""+image_route).set(data)
-        ret, jpg = cv2.imencode('.jpg', img)
-        image = b64encode(jpg).decode('utf-8')
+        blob = firebase.bucket.blob('personas/' + image_route)
+        ret, buffer = cv2.imencode('.jpg', img)
+        io_buf = io.BytesIO(buffer)
+        blob.upload_from_file(io_buf, content_type='image/jpg')
+        image = b64encode(buffer).decode('utf-8')
         template = loader.get_template('imageProcessing/image.html')
         context = {'image': image}
         return HttpResponse(template.render(context, request))
