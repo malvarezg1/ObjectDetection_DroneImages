@@ -9,6 +9,10 @@ from base64 import b64encode
 import cv2
 import numpy as np
 import io
+import tempfile
+import urllib.request
+import datetime
+import requests
 
 # Create your views here.
 config = {
@@ -30,6 +34,7 @@ firebase_key = {
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-bc32q%40drone-control-app.iam.gserviceaccount.com"
 }
 
+
 class FirebaseConnection:
     def __init__(self):
         self.cred = credentials.Certificate(firebase_key)
@@ -37,50 +42,52 @@ class FirebaseConnection:
         self.bucket = storage.bucket()
         self.db = firestore.client()
 
+
 class YoloModel:
     def __init__(self):
         with open('D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/coco.names', 'r') as f:
             classNames = f.read().split('\n')
-        configPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt'
-        weightsPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/frozen_inference_graph.pb'
-        net = cv2.dnn_DetectionModel(weightsPath, configPath)
-        net.setInputSize((320, 320))
-        net.setInputScale(1.0 / 127.5)
-        net.setInputMean((127.5, 127.5, 127.5))
-        net.setInputSwapRB(True)
-        self.net = net
+
+        # Yolo 4 config files
+        configPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/yolov4.cfg'
+        weightsPath = 'D:/2022-1/Teisis ISIS/CV-back-end/cv_backend/imageProcessing/yolov4.weights'
+
+        # Charge YOLO on OpenCV Adapter
+        net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
+        model = cv2.dnn_DetectionModel(net)
+        model.setInputParams(scale=1 / 255, size=(416, 416), swapRB=True)
+        self.net = model
         self.classes = classNames
+
 
 firebase = FirebaseConnection()
 yolo_model = YoloModel()
 
+
 def index(request):
-        blobs = firebase.bucket.list_blobs()    
-        template = loader.get_template('imageProcessing/index.html')
-        context = {
-            'files_list': blobs
-        }
-        return HttpResponse(template.render(context, request))
+    blobs = firebase.bucket.list_blobs()
+    template = loader.get_template('imageProcessing/index.html')
+    context = {
+        'files_list': blobs
+    }
+    return HttpResponse(template.render(context, request))
+
 
 def get_image_by_id(request, image_route):
-    doc_ref = firebase.db.collection(u'Analyzed_Media').document(u''+image_route)
-    doc = doc_ref.get()
-    if doc.exists:
-        print("Existe")
-        template = loader.get_template('imageProcessing/index.html')
-        context = {'files_list': "La imagen ya existe"}
+    doc = firebase.db.collection(u'Analyzed_Media').document(u'' + image_route).get()
+    if doc.exists:  # Process image only if n ot processed before.
+        template = loader.get_template('imageProcessing/text.html')
+        context = {'text': "La imagen ya existe"}
         return HttpResponse(template.render(context, request))
-    else:
-        print("No existe")
-        blob = firebase.bucket.blob('images/' + image_route)
-        blob_bytes = blob.download_as_bytes()
-        im_arr = np.frombuffer(blob_bytes, dtype=np.uint8)  # im_arr is one-dim Numpy array
+    else:  # Get image
+        blob = firebase.bucket.blob('images/' + image_route).download_as_bytes()
+        im_arr = np.frombuffer(blob, dtype=np.uint8)
         img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
-        results = count_persons_image(img)
+        results = count_persons_image(img)  # Analyze image
         pers = list()
-        for x, y, h, w, label, confidence in results:
+        for x, y, h, w, label, confidence in results:  # Process results from analysis
             img = cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
-            img = cv2.putText(img,label , (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
+            img = cv2.putText(img, label + confidence, (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
             pers.append({
                 u"x": float(x),
                 u"y": float(y),
@@ -94,33 +101,78 @@ def get_image_by_id(request, image_route):
                 u"count": len(pers),
                 u"shapes": pers
             }
-        }
-        firebase.db.collection(u"Analyzed_Media").document(u""+image_route).set(data)
+        }  # Save results analysis results on database
+        firebase.db.collection(u"Analyzed_Media").document(u"" + image_route).set(data)
         blob = firebase.bucket.blob('personas/' + image_route)
         ret, buffer = cv2.imencode('.jpg', img)
         io_buf = io.BytesIO(buffer)
-        blob.upload_from_file(io_buf, content_type='image/jpg')
+        blob.upload_from_file(io_buf, content_type='image/jpg')  # Upload processed image
         image = b64encode(buffer).decode('utf-8')
         template = loader.get_template('imageProcessing/image.html')
         context = {'image': image}
         return HttpResponse(template.render(context, request))
 
+
+def get_video_by_id(request, video_route):
+    bytes = firebase.bucket.blob('videos/' + video_route).download_as_bytes()
+    with open("prueba.mp4", "wb") as out_file:
+        out_file.write(bytes)
+    cap = cv2.VideoCapture("prueba.mp4")
+    mult = 0.25
+    frame_width = int(cap.get(3) * mult)
+    frame_height = int(cap.get(4) * mult)
+    fps = int(cap.get(5))
+    size = (frame_width, frame_height)
+    result = cv2.VideoWriter('processedVideo.mp4', cv2.VideoWriter_fourcc(*'H264'), fps, size)
+    thumbnail = False
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            print("Can't receive frame (stream end?). Exiting ...")
+            break
+
+        if not thumbnail:
+            blob = firebase.bucket.blob('videosThumbnail/' + video_route)
+            ret, buffer = cv2.imencode('.jpg', frame)
+            io_buf = io.BytesIO(buffer)
+            blob.upload_from_file(io_buf, content_type='image/jpg')
+            thumbnail = True
+
+        frame = cv2.resize(frame, size)
+        results = count_persons_image(frame)
+        for x, y, h, w, label, confidence in results:
+            frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
+            frame = cv2.putText(frame, label, (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
+        frame = cv2.putText(frame, "Persons:" + str(len(results)), (20, 40), 1, 3, (255, 0, 0), 4)
+
+        result.write(frame)
+        if cv2.waitKey(1) == ord('q'):
+            break
+
+    cap.release()
+    result.release()
+    cv2.destroyAllWindows()
+    files = {'file': (video_route, open('processedVideo.mp4', 'rb'), 'video/mp4')}
+    requests.post("https://us-central1-drone-control-app.cloudfunctions.net/uploadFileProcessed", files=files)
+    template = loader.get_template('imageProcessing/text.html')
+    context = {'text': video_route}
+    return HttpResponse(template.render(context, request))
+
+
 def count_persons_image(img):
     thres = 0.5
-    nmsThres = 0.5
+    nmsThres = 0.005
     classIds, confs, bbox = yolo_model.net.detect(img, confThreshold=thres, nmsThreshold=nmsThres)
     bbox = list(bbox)
     confs = list(np.array(confs).reshape(1, -1)[0])
     confs = list(map(float, confs))
-    indices = cv2.dnn.NMSBoxes(bbox, confs, thres, nmsThres)
     results = list()
+
     if len(classIds) != 0:
-        for i in indices:
-            print(classIds)
+        for i in range(0, len(classIds)):
             box = bbox[i]
             confidence = str(round(confs[i], 2))
             x, y, w, h = box[0], box[1], box[2], box[3]
-            if yolo_model.classes[classIds[i]-1] == 'person':
-                results.append([x, y, h, w, yolo_model.classes[classIds[i]-1], confidence])
+            if yolo_model.classes[classIds[i]] == 'person':
+                results.append([x, y, h, w, yolo_model.classes[classIds[i]], confidence])
     return results
-
