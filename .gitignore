@@ -1,1 +1,3 @@
 venv/
+cv_backend/imageProcessing/yolov4.cfg
+cv_backend/imageProcessing/yolov4.weights

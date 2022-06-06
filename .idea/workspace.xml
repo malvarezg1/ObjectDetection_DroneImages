@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="5ca5b3cd-a0e9-40a7-ad4e-c2810329a9b7" name="Default Changelist" comment="" />
+    <list default="true" id="5ca5b3cd-a0e9-40a7-ad4e-c2810329a9b7" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -36,7 +38,7 @@
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../FastAPI_CV_Backend" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RecentsManager">
@@ -44,6 +46,8 @@
       <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend" />
+      <recent name="D:\2022-1\Teisis ISIS\CV-back-end" />
       <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing" />
       <recent name="D:\2022-1\Teisis ISIS\CV-back-end\cv_backend\imageProcessing\templates\imageProcessing" />
     </key>
