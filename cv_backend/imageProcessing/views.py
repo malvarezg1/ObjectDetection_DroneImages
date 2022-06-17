@@ -143,7 +143,7 @@ def get_video_by_id(request, video_route):
         for x, y, h, w, label, confidence in results:
             frame = cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), thickness=2)
             frame = cv2.putText(frame, label, (x + 10, y + 20), 1, 1, (255, 0, 0), 2)
-        frame = cv2.putText(frame, "Persons:" + str(len(results)), (20, 40), 1, 3, (255, 0, 0), 4)
+        frame = cv2.putText(frame, "People:" + str(len(results)), (20, 40), 1, 3, (255, 0, 0), 4)
 
         result.write(frame)
         if cv2.waitKey(1) == ord('q'):
